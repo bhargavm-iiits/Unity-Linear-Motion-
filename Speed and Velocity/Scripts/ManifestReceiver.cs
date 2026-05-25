@@ -210,6 +210,7 @@ public class ManifestReceiver : MonoBehaviour
                         if (cameraSequence != null)
                         {
                             cameraSequence.cycleSpeed = msg.manifest.cycling_speed;
+                            cameraSequence.journeyDistance = msg.manifest.journey_distance;
                             cameraSequence.BeginSequenceFromManifest();
                         }
                     }
@@ -254,6 +255,25 @@ public class ManifestReceiver : MonoBehaviour
             detail = "Student is looking at primary learning asset"
         });
 
+        string json = JsonUtility.ToJson(batch);
+        await websocket.SendText(json);
+    }
+
+    public async void SendTelemetryItem(string eventType, string detail)
+    {
+        if (websocket == null || websocket.State != WebSocketState.Open || string.IsNullOrEmpty(sessionId)) return;
+        
+        TelemetryBatchEvent batch = new TelemetryBatchEvent
+        {
+            session_id = this.sessionId
+        };
+        batch.events.Add(new TelemetryItem
+        {
+            type = eventType,
+            timestamp = DateTime.UtcNow.ToString("o"),
+            detail = detail
+        });
+        
         string json = JsonUtility.ToJson(batch);
         await websocket.SendText(json);
     }

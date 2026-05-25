@@ -207,7 +207,12 @@ public class HillyEnvironmentGenerator : MonoBehaviour
         if (prefabToUse != null)
         {
 #if UNITY_EDITOR
-            GameObject tree = (GameObject)UnityEditor.PrefabUtility.InstantiatePrefab(prefabToUse);
+            GameObject tree = null;
+            if (Application.isPlaying) {
+                tree = Instantiate(prefabToUse);
+            } else {
+                tree = (GameObject)UnityEditor.PrefabUtility.InstantiatePrefab(prefabToUse);
+            }
             if (tree == null) tree = Instantiate(prefabToUse);
 #else
             GameObject tree = Instantiate(prefabToUse);
@@ -269,21 +274,11 @@ public class HillyEnvironmentGenerator : MonoBehaviour
 
     void PlaceBicycle()
     {
-        GameObject bicycle = null;
-        foreach (GameObject obj in FindObjectsByType<GameObject>(FindObjectsInactive.Exclude))
+        GameObject bicycle = GameObject.Find(bicycleModelName);
+        if (bicycle == null)
         {
-            if (obj.name.Contains(bicycleModelName) && obj.transform.parent == null)
-            {
-                if (bicycle == null)
-                {
-                    bicycle = obj;
-                }
-                else
-                {
-                    // Destroy any extra/duplicate bicycle meshes!
-                    DestroyImmediate(obj);
-                }
-            }
+            SpeedAndVelocityDemo demo = Object.FindAnyObjectByType<SpeedAndVelocityDemo>();
+            if (demo != null) bicycle = demo.gameObject;
         }
         
         if (bicycle != null)

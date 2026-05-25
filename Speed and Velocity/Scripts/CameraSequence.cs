@@ -8,11 +8,14 @@ public class CameraSequence : MonoBehaviour
     
     [Header("Sequence Settings")]
     public float cycleSpeed = 5f; // 200 meters in 40 seconds = 5 m/s
+    public float journeyDistance = 200f; // Set by manifest
     public float timeBetweenPopups = 7.5f; // Spaced out across 40 seconds
 
-    // Track bounds: 200m from z=-100 to z=+100
-    private float trackStartZ = -100f;
-    private float trackEndZ   =  100f;
+    [Header("VR Support")]
+    public bool isVR = true;
+
+    private float trackStartZ { get { return -journeyDistance / 2f; } }
+    private float trackEndZ   { get { return journeyDistance / 2f; } }
 
     private float elapsedTime   = 0f;
     private float distanceTravelled = 0f;
@@ -55,16 +58,17 @@ public class CameraSequence : MonoBehaviour
         // timeBetweenPopups can remain locally defined or overridden
         timeBetweenPopups = 7.5f;
 
-        // Auto-find bicycle
         if (targetCycle == null)
         {
-            foreach (GameObject obj in FindObjectsByType<GameObject>(FindObjectsInactive.Exclude))
+            GameObject meshyObj = GameObject.Find("Meshy");
+            if (meshyObj != null) 
             {
-                if (obj.name.Contains("Meshy") && obj.transform.parent == null)
-                {
-                    targetCycle = obj.transform;
-                    break;
-                }
+                targetCycle = meshyObj.transform;
+            }
+            else 
+            {
+                SpeedAndVelocityDemo demo = Object.FindAnyObjectByType<SpeedAndVelocityDemo>();
+                if (demo != null) targetCycle = demo.transform;
             }
         }
 
@@ -95,7 +99,7 @@ public class CameraSequence : MonoBehaviour
                 transform.position = currentCamPos;
                 transform.rotation = currentCamRot;
             }
-            else
+            else if (!isVR)
             {
                 // World-space chase camera: 2m up, 3m behind (much closer)
                 Vector3 targetPos = targetCycle.position + new Vector3(0, 2f, -3.5f);
@@ -110,7 +114,7 @@ public class CameraSequence : MonoBehaviour
             if (isMoving)
             {
                 elapsedTime += Time.deltaTime;
-                distanceTravelled = Mathf.Clamp(targetCycle.position.z - trackStartZ, 0f, 200f);
+                distanceTravelled = Mathf.Clamp(targetCycle.position.z - trackStartZ, 0f, journeyDistance);
 
                 if (hudDistText3D != null)
                 {
@@ -219,56 +223,76 @@ public class CameraSequence : MonoBehaviour
             yield break;
         }
 
-        // ── INTRO: TOP DOWN CAMERA ──
-        isCinematicIntro = true;
-        Vector3 topPos = new Vector3(0, 200f, 0); 
-        Quaternion topRot = Quaternion.Euler(90f, 0, 0);
-        currentCamPos = topPos;
-        currentCamRot = topRot;
+        // Calculate dynamic popup timing
+        float travelTime = journeyDistance / cycleSpeed;
+        timeBetweenPopups = travelTime / (speedPoints.Length + 1);
 
-        // Optimization: Render full depth for the 200m high camera
-        if (Camera.main != null) Camera.main.farClipPlane = 350f;
-        RenderSettings.fog = true;
-        RenderSettings.fogMode = FogMode.Linear;
-        RenderSettings.fogColor = new Color(0.5f, 0.7f, 0.9f); // Sky blue
-        RenderSettings.fogStartDistance = 200f;
-        RenderSettings.fogEndDistance = 350f;
-
-        // Hold Top Down for 2 seconds (reduced from 3)
-        yield return new WaitForSeconds(2f);
-
-        // Reset the bike to the starting line BEFORE swooping the camera down, 
-        // to prevent the camera from jerking to a new position later.
-        ResetBikeToStart(rightSide: true);
-
-        // Swoop down to chase position over 2 seconds (reduced from 3)
-        float swoopDuration = 2.0f;
-        float elapsed = 0f;
-        while (elapsed < swoopDuration)
+        if (isVR)
         {
-            float t = elapsed / swoopDuration;
-            t = t * t * (3f - 2f * t);
-
-            Vector3 chasePos = targetCycle.position + new Vector3(0, 2f, -3.5f);
-            Vector3 lookTarget = targetCycle.position + new Vector3(0, 1.5f, 2f);
-            Quaternion chaseRot = Quaternion.LookRotation(lookTarget - chasePos);
-
-            currentCamPos = Vector3.Lerp(topPos, chasePos, t);
-            currentCamRot = Quaternion.Lerp(topRot, chaseRot, t);
-
-            elapsed += Time.deltaTime;
-            yield return null;
+            isCinematicIntro = false;
+            // Parent the VR rig directly to the bicycle so it moves with it
+            transform.position = targetCycle.position + new Vector3(0, 1.0f, -0.5f); // Seat position
+            transform.rotation = targetCycle.rotation;
+            transform.SetParent(targetCycle);
+            
+            // Optimization for VR
+            if (Camera.main != null) Camera.main.farClipPlane = 150f;
+            RenderSettings.fogStartDistance = 50f;
+            RenderSettings.fogEndDistance = 150f;
         }
+        else
+        {
+            // ── INTRO: TOP DOWN CAMERA ──
+            isCinematicIntro = true;
+            Vector3 topPos = new Vector3(0, 200f, 0); 
+            Quaternion topRot = Quaternion.Euler(90f, 0, 0);
+            currentCamPos = topPos;
+            currentCamRot = topRot;
 
-        GameObject groundText = GameObject.Find("GeneratedText");
-        if (groundText != null) groundText.SetActive(false);
+            // Optimization: Render full depth for the 200m high camera
+            if (Camera.main != null) Camera.main.farClipPlane = 350f;
+            RenderSettings.fog = true;
+            RenderSettings.fogMode = FogMode.Linear;
+            RenderSettings.fogColor = new Color(0.5f, 0.7f, 0.9f); // Sky blue
+            RenderSettings.fogStartDistance = 200f;
+            RenderSettings.fogEndDistance = 350f;
 
-        isCinematicIntro = false;
+            // Hold Top Down for 2 seconds (reduced from 3)
+            yield return new WaitForSeconds(2f);
 
-        // Optimization: Reduce far clip plane drastically so it ONLY renders what is right in front of the camera!
-        if (Camera.main != null) Camera.main.farClipPlane = 80f;
-        RenderSettings.fogStartDistance = 20f;
-        RenderSettings.fogEndDistance = 80f;
+            // Reset the bike to the starting line BEFORE swooping the camera down, 
+            // to prevent the camera from jerking to a new position later.
+            ResetBikeToStart(rightSide: true);
+
+            // Swoop down to chase position over 2 seconds (reduced from 3)
+            float swoopDuration = 2.0f;
+            float elapsed = 0f;
+            while (elapsed < swoopDuration)
+            {
+                float t = elapsed / swoopDuration;
+                t = t * t * (3f - 2f * t);
+
+                Vector3 chasePos = targetCycle.position + new Vector3(0, 2f, -3.5f);
+                Vector3 lookTarget = targetCycle.position + new Vector3(0, 1.5f, 2f);
+                Quaternion chaseRot = Quaternion.LookRotation(lookTarget - chasePos);
+
+                currentCamPos = Vector3.Lerp(topPos, chasePos, t);
+                currentCamRot = Quaternion.Lerp(topRot, chaseRot, t);
+
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            GameObject groundText = GameObject.Find("GeneratedText");
+            if (groundText != null) groundText.SetActive(false);
+
+            isCinematicIntro = false;
+
+            // Optimization: Reduce far clip plane drastically so it ONLY renders what is right in front of the camera!
+            if (Camera.main != null) Camera.main.farClipPlane = 80f;
+            RenderSettings.fogStartDistance = 20f;
+            RenderSettings.fogEndDistance = 80f;
+        }
         
         // Show giant SPEED title popup before traveling
         yield return StartCoroutine(ShowTitlePopup("SPEED", new Color(1f, 0.9f, 0f)));

@@ -99,4 +99,18 @@ public class SetupSceneTool
         
         Debug.Log("<color=green>Scene Setup Complete!</color> The scene has been updated and saved automatically.");
     }
+
+    [MenuItem("Tools/Clean Up Missing Scripts")]
+    public static void CleanUpMissingScripts()
+    {
+        var allObjects = Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include);
+        int totalRemoved = 0;
+        foreach (var go in allObjects)
+        {
+            int removed = GameObjectUtility.RemoveMonoBehavioursWithMissingScript(go);
+            totalRemoved += removed;
+        }
+        Debug.Log("<color=yellow>Removed " + totalRemoved + " missing scripts from the scene!</color>");
+        EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene());
+    }
 }
