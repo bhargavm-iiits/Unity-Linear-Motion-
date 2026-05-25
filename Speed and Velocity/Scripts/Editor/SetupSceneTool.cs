@@ -14,7 +14,7 @@ public class SetupSceneTool
         }
 
         // Path to the scene you mentioned
-        string scenePath = "Assets/speed/Scene/speed Velocity.unity";
+        string scenePath = "Assets/speed/Speed and Velocity/Scene/speed Velocity.unity";
         
         // Open the Scene
         try
@@ -40,7 +40,7 @@ public class SetupSceneTool
         }
 
         // 2. Add the Bicycle Mesh
-        string fbxPath = "Assets/speed/Scene/Assets/Meshy_AI__0523174242_generate.fbx";
+        string fbxPath = "Assets/speed/Speed and Velocity/Scene/Assets/Meshy_AI__0523174242_generate.fbx";
         GameObject bicyclePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(fbxPath);
         
         if (bicyclePrefab != null)

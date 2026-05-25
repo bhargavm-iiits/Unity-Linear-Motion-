@@ -75,15 +75,15 @@ public class HillyEnvironmentGenerator : MonoBehaviour
 #if UNITY_EDITOR
         if (!Application.isPlaying)
         {
-            if (!UnityEditor.AssetDatabase.IsValidFolder("Assets/speed/Scene/Generated"))
+            if (!UnityEditor.AssetDatabase.IsValidFolder("Assets/speed/Speed and Velocity/Scene/Generated"))
             {
-                if (!UnityEditor.AssetDatabase.IsValidFolder("Assets/speed/Scene"))
+                if (!UnityEditor.AssetDatabase.IsValidFolder("Assets/speed/Speed and Velocity/Scene"))
                 {
-                    UnityEditor.AssetDatabase.CreateFolder("Assets/speed", "Scene");
+                    UnityEditor.AssetDatabase.CreateFolder("Assets/speed/Speed and Velocity", "Scene");
                 }
-                UnityEditor.AssetDatabase.CreateFolder("Assets/speed/Scene", "Generated");
+                UnityEditor.AssetDatabase.CreateFolder("Assets/speed/Speed and Velocity/Scene", "Generated");
             }
-            string assetPath = "Assets/speed/Scene/Generated/GeneratedTerrainData.asset";
+            string assetPath = "Assets/speed/Speed and Velocity/Scene/Generated/GeneratedTerrainData.asset";
             if (UnityEditor.AssetDatabase.LoadAssetAtPath<TerrainData>(assetPath) != null)
             {
                 UnityEditor.AssetDatabase.DeleteAsset(assetPath);
@@ -200,7 +200,7 @@ public class HillyEnvironmentGenerator : MonoBehaviour
 #if UNITY_EDITOR
         if (prefabToUse == null)
         {
-            prefabToUse = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/speed/Scene/Assets/Big Oak Tree FREE/Prefabs/OakBigTree01_pr.prefab");
+            prefabToUse = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/speed/Speed and Velocity/Scene/Assets/Big Oak Tree FREE/Prefabs/OakBigTree01_pr.prefab");
         }
 #endif
 
